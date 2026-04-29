@@ -1,9 +1,5 @@
 [
   {
-    "id": 2,
-    "name": "Nama Baru"
-  },
-  {
     "id": 3,
     "name": "Tester"
   },
@@ -14,5 +10,21 @@
   {
     "id": 5,
     "name": "Keke"
+  },
+  {
+    "id": 6,
+    "name": "Keke"
+  },
+  {
+    "id": 7,
+    "name": "Final Test",
+    "email": "final@test.com"
+  },
+  {
+    "id": 1777295359942,
+    "name": "UserB",
+    "email": "b@test.com",
+    "password": "$2b$10$Sp.EKbkN3zzEZNjF0hyq5.fECaI82OABCogwDbalRnYcUGwJmT4J.",
+    "role": "user"
   }
 ]

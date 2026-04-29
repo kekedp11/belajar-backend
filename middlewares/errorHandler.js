@@ -1,8 +1,10 @@
 const errorHandler = (err, req, res, next) => {
-  console.error(err.stack);
+  const statusCode = err.status || 500;
 
-  res.status(err.status || 500).json({
-    message: err.message || "Terjadi kesalahan server"
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || "Terjadi kesalahan server",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 };
 

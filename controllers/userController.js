@@ -1,143 +1,86 @@
-const fs = require("fs").promises;
-const path = require("path");
+const userService = require("../services/userService");
+const asyncHandler = require("../utils/asyncHandler");
+const sendResponse = require("../utils/response");
 
-const dataPath = path.join(__dirname, "../data/users.json");
+// ======================
+// GET ALL USERS
+// ======================
+const getUsers = asyncHandler(async (req, res) => {
+  const users = await userService.getAllUsers(req.query.name);
+  sendResponse(res, 200, "Users fetched successfully", users);
+});
 
-async function getUsersData() {
-  const data = await fs.readFile(dataPath, "utf-8");
-  return JSON.parse(data);
-}
+// ======================
+// GET USER BY ID
+// ======================
+const getUserById = asyncHandler(async (req, res) => {
+  const user = await userService.getUserById(parseInt(req.params.id));
+  sendResponse(res, 200, "User fetched successfully", user);
+});
 
-async function saveUsers(users) {
-  await fs.writeFile(dataPath, JSON.stringify(users, null, 2));
-}
+// ======================
+// REGISTER USER
+// ======================
+const createUser = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
 
-// GET ALL
-const getUsers = async (req, res, next) => {
-  try {
-    const users = await getUsersData();
-    const { name } = req.query;
+  const newUser = await userService.createUser(name, email, password);
 
-    if (name) {
-      const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(name.toLowerCase())
-      );
-      return res.json(filteredUsers);
-    }
+  sendResponse(res, 201, "User created successfully", newUser);
+});
 
-    res.json(users);
-  } catch (error) {
-    next(error);
+// ======================
+// LOGIN USER
+// ======================
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  const token = await userService.loginUser(email, password);
+
+  sendResponse(res, 200, "Login successful", { token });
+});
+
+// ======================
+// UPDATE USER
+// ======================
+const updateUser = asyncHandler(async (req, res) => {
+  const userId = parseInt(req.params.id);
+  const { name, email } = req.body;
+
+  // Optional: ownership check juga bisa ditaruh di sini kalau mau
+  // if (req.user.id !== userId) {
+  //   const err = new Error("Forbidden - You can only update your own account");
+  //   err.status = 403;
+  //   throw err;
+  // }
+
+  const updatedUser = await userService.updateUser(userId, name, email);
+
+  sendResponse(res, 200, "User updated successfully", updatedUser);
+});
+
+// ======================
+// DELETE USER
+// ======================
+const deleteUser = asyncHandler(async (req, res) => {
+  const userId = parseInt(req.params.id);
+
+  if (req.user.id !== userId) {
+    const err = new Error("Forbidden - You can only delete your own account");
+    err.status = 403;
+    throw err;
   }
-};
 
-// GET BY ID
-const getUserById = async (req, res, next) => {
-  try {
-    const users = await getUsersData();
-    const userId = parseInt(req.params.id);
-    const user = users.find(u => u.id === userId);
+  await userService.deleteUser(userId);
 
-    if (!user) {
-      const err = new Error("User tidak ditemukan");
-      err.status = 404;
-      throw err;
-    }
-
-    res.json(user);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// POST
-const createUser = async (req, res, next) => {
-  try {
-    const users = await getUsersData();
-    const { name } = req.body || {};
-
-    if (!name) {
-      const err = new Error("Nama wajib diisi");
-      err.status = 400;
-      throw err;
-    }
-
-    const newUser = {
-      id: users.length ? users[users.length - 1].id + 1 : 1,
-      name
-    };
-
-    users.push(newUser);
-    await saveUsers(users);
-
-    res.status(201).json({
-      message: "User berhasil ditambahkan",
-      data: newUser
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// DELETE
-const deleteUser = async (req, res, next) => {
-  try {
-    const users = await getUsersData();
-    const userId = parseInt(req.params.id);
-    const userIndex = users.findIndex(u => u.id === userId);
-
-    if (userIndex === -1) {
-      const err = new Error("User tidak ditemukan");
-      err.status = 404;
-      throw err;
-    }
-
-    users.splice(userIndex, 1);
-    await saveUsers(users);
-
-    res.json({ message: "User berhasil dihapus" });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// PUT
-const updateUser = async (req, res, next) => {
-  try {
-    const users = await getUsersData();
-    const userId = parseInt(req.params.id);
-    const { name } = req.body || {};
-
-    const user = users.find(u => u.id === userId);
-
-    if (!user) {
-      const err = new Error("User tidak ditemukan");
-      err.status = 404;
-      throw err;
-    }
-
-    if (!name) {
-      const err = new Error("Nama wajib diisi");
-      err.status = 400;
-      throw err;
-    }
-
-    user.name = name;
-    await saveUsers(users);
-
-    res.json({
-      message: "User berhasil diupdate",
-      data: user
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+  sendResponse(res, 200, "User deleted successfully");
+});
 
 module.exports = {
   getUsers,
   getUserById,
   createUser,
-  deleteUser,
-  updateUser
+  loginUser,
+  updateUser,
+  deleteUser
 };
